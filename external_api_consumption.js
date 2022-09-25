@@ -1,14 +1,19 @@
 // Initial configuration
 const axios = require('axios').default;
-const apiBasePath = 'https://echo-serv.tbxnet.com/v1';
 const fs = require('fs');
 
+// External API Endpoints and tokens
+const baseAPIEndpoint = 'https://echo-serv.tbxnet.com/v1';
+const getAllFilesEndpoint = '/secret/files';
+const getASingleFileEndpoint = '/secret/file';
+const authorizationToken = 'Bearer aSuperSecretKey';
+
 // GET ALL FILES REQUEST
-const getAllFiles = async () => {
+const getAllFilesRequest = async () => {
     try {
-        const response = await axios.get(`${apiBasePath}/secret/files`, {
+        const response = await axios.get(`${baseAPIEndpoint}${getAllFilesEndpoint}`, {
             headers: {
-                'Authorization': 'Bearer aSuperSecretKey'
+                'Authorization': authorizationToken
             }
         });
         let files = response.data.files;
@@ -19,11 +24,11 @@ const getAllFiles = async () => {
 };
 
 // GET A SINGLE FILE REQUEST
-const getASingleFile = async (fileName) => {
+const getASingleFileRequest = async (fileName) => {
     try {
-        const response = await axios.get(`${apiBasePath}/secret/file/${fileName}`, {
+        const response = await axios.get(`${baseAPIEndpoint}${getASingleFileEndpoint}/${fileName}`, {
             headers: {
-                'Authorization': 'Bearer aSuperSecretKey'
+                'Authorization': authorizationToken
             }
         });
         return response.data;
@@ -33,16 +38,16 @@ const getASingleFile = async (fileName) => {
 };
 
 // Executing external API Requests and writing into system
-async function externalAPICall() {
-    getAllFiles().then(function(response) {
+async function downloadFilesFromExternalAPI(destinationPath) {
+    getAllFilesRequest().then(function(response) {
         console.log(`Total amount of files found: ${response.length}\nDownloading...`);
-
+        
         // Download each file found
         for(i in response) {
             let fileName = response[i];
             console.log(`Attempting to download: "${fileName}"...`);
-            getASingleFile(fileName).then(function(response) {
-                fs.writeFile(`./files/${fileName}`, response, (err) => {
+            getASingleFileRequest(fileName).then(function(response) {
+                fs.writeFile(`${destinationPath}/${fileName}`, response, (err) => {
                     if (err) {
                         console.error(err);
                     }
@@ -53,8 +58,10 @@ async function externalAPICall() {
                 console.log(`Failed to download: '${fileName}'`);
             });
         };
+    }).catch(function(err) {
+        console.error(err);
     });
 };
 
 // Exports
-module.exports.externalAPICall = externalAPICall;
+module.exports.downloadFilesFromExternalAPI = downloadFilesFromExternalAPI;

@@ -1,6 +1,5 @@
 // Initial configuration
 const axios = require('axios').default;
-const fs = require('fs');
 
 // External API Endpoints and tokens
 const baseAPIEndpoint = 'https://echo-serv.tbxnet.com/v1';
@@ -37,31 +36,22 @@ const getASingleFileRequest = async (fileName) => {
     }
 };
 
-// Executing external API Requests and writing into system
-async function downloadFilesFromExternalAPI(destinationPath) {
-    getAllFilesRequest().then(function(response) {
+// Input: ---
+// Output: List with all file contents
+function downloadFilesFromExternalAPI() {
+    // getAllFilesRequest => Array(String)
+    return getAllFilesRequest()
+    .then((response) => {
         console.log(`Total amount of files found: ${response.length}\nDownloading...`);
-        
-        // Download each file found
-        for(i in response) {
-            let fileName = response[i];
-            console.log(`Attempting to download: "${fileName}"...`);
-            getASingleFileRequest(fileName).then(function(response) {
-                fs.writeFile(`${destinationPath}/${fileName}`, response, (err) => {
-                    if (err) {
-                        console.error(err);
-                    }
-                });
-                console.log(`Successfully downloaded: '${fileName}'`);
-            })
-            .catch(function(error) {
-                console.log(`Failed to download: '${fileName}'`);
-            });
-        };
-    }).catch(function(err) {
+        // Mapping Array(String) -> Array(Promise(String))
+        const fileContentPromises = response.map(file => getASingleFileRequest(file));
+        return Promise.all(fileContentPromises);
+    }).catch((err) => {
         console.error(err);
     });
 };
+
+
 
 // Exports
 module.exports.downloadFilesFromExternalAPI = downloadFilesFromExternalAPI;
